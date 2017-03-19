@@ -1,5 +1,6 @@
 import discord
 import logging
+from credentials import token
 
 # Enable logging
 logging.basicConfig(level=logging.INFO)
@@ -53,3 +54,4 @@ def check_lang(message):
 
     # TODO: Return the lang
 
+bot_client.run(token)
