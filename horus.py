@@ -1,6 +1,8 @@
 import discord
+import subprocess
 import logging
 from credentials import token
+from datetime import datetime
 
 # Enable logging
 logging.basicConfig(level=logging.INFO)
@@ -18,7 +20,9 @@ async def on_ready():
 
 @bot_client.event
 async def on_message(msg):
-    print('MSG: ' + msg.content)
+    with open("botlog", "a") as log:
+        log.write("%s %s MSG: %s\n" % (datetime.now(), msg.author, msg.content))
+        print("%s %s MSG: %s\n" % (datetime.now(), msg.author, msg.content))
     if msg.content.startswith('!test'):  # Test function
         await bot_client.send_message(msg.channel, 'Test received!')
     elif msg.content.startswith('<@291477047962763264>'):  # Toggled when the bot is mentioned
@@ -30,10 +34,14 @@ async def on_message(msg):
             if not lang:
                 await bot_client.send_message(msg.channel, "The language wasn't specified.")
             else:
-                await bot_client.send_message(msg.channel, "Running %s code." % lang)
-                # TODO: Run code
+                await bot_client.send_message(msg.channel, "Running %s code. Output:\n" % lang)
+                filename = build_exec(lang, code)
+                print("Break 1")
+                output = run_code(lang, filename)
+                print(output)
+                await bot_client.send_message(msg.channel, "```%s```" % output)
 
-            await bot_client.send_message(msg.channel, code)
+                # TODO: Run code
         # TODO: Research how to sandbox a python program
 
 
@@ -74,11 +82,21 @@ def check_lang(message, code):
     print("Break C")
     return 0, code
 
-    # TODO: Split message into args and syntax markdown
 
-    # TODO: Check if it's using one of them, or both at the same time
+def build_exec(lang, code):
+    """Creates a file with the provided code in it."""
+    lang_to_filetype = {
+            "Python": ".py"}
+    filename = "./%s/%s%s" % (lang, datetime.now(), lang_to_filetype[lang])
+    with open(filename, "a") as file:
+        for line in code:
+            file.write("%s\n" % line)
+    return filename
 
-    # TODO: Return the lang
+
+def run_code(lang, filename):
+    # Still WIP.
+    return 0
 
 
 bot_client.run(token)
