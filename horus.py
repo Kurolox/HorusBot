@@ -1,6 +1,7 @@
 import discord
-import subprocess
+from subprocess import Popen, PIPE
 import logging
+from sys import path
 from credentials import token
 from datetime import datetime
 
@@ -34,10 +35,13 @@ async def on_message(msg):
             if not lang:
                 await bot_client.send_message(msg.channel, "The language wasn't specified.")
             else:
-                await bot_client.send_message(msg.channel, "Running %s code. Output:\n" % lang)
                 filename = build_exec(lang, code)
-                output = run_code(lang, filename)
-                await bot_client.send_message(msg.channel, "```%s```" % output)
+                print(filename)
+                output, error = run_code(lang, filename)
+                if error:
+                    await bot_client.send_message(msg.channel, "The bot has encountered the following error when running your %s code. \n```\n%s```" % (lang, error))
+                else:
+                    await bot_client.send_message(msg.channel, "Here's the output of your %s code. \n```\n%s```" % (lang, output))
 
                 # TODO: Run code
         # TODO: Research how to sandbox a python program
@@ -84,7 +88,8 @@ def build_exec(lang, code):
     lang_to_filetype = {
         "Python": ".py"}
     date = str(datetime.now())
-    filename = "./%s/%s%s" % (lang, date.replace(" ", "_"), lang_to_filetype[lang])
+    filename = "%s/%s/%s%s" % (path[0], lang, date.replace(" ", "--"), lang_to_filetype[lang])
+    print(filename)
     with open(filename, "a") as file:
         for line in code:
             file.write("%s\n" % line)
@@ -93,7 +98,10 @@ def build_exec(lang, code):
 
 def run_code(lang, filename):
     # Still WIP.
-    return 0
+    if lang == "Python":
+        process = Popen(["python", filename], stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate(timeout=6)
+        return stdout.decode("utf-8"), stderr.decode("utf-8")
 
 
 bot_client.run(token)
