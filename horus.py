@@ -36,9 +36,7 @@ async def on_message(msg):
             else:
                 await bot_client.send_message(msg.channel, "Running %s code. Output:\n" % lang)
                 filename = build_exec(lang, code)
-                print("Break 1")
                 output = run_code(lang, filename)
-                print(output)
                 await bot_client.send_message(msg.channel, "```%s```" % output)
 
                 # TODO: Run code
@@ -57,7 +55,7 @@ def check_code(message):
 def check_lang(message, code):
     '''Checks if there's an argument or a language specified in the code.'''
     compatible_languages = {
-            "Python": ("python", "py", "pycode")}
+        "Python": ("python", "py", "pycode")}
     detected_lang = ""
     try:
         argument = message.split("```")[0].split(" ")[1]  # Checks argument
@@ -75,19 +73,18 @@ def check_lang(message, code):
     else:
         for language, diff_naming in compatible_languages.items():
             if code[0] in diff_naming:
-                print("Break B")
                 detected_lang = language
                 code[0] = ""
                 return detected_lang, code
-    print("Break C")
     return 0, code
 
 
 def build_exec(lang, code):
     """Creates a file with the provided code in it."""
     lang_to_filetype = {
-            "Python": ".py"}
-    filename = "./%s/%s%s" % (lang, datetime.now(), lang_to_filetype[lang])
+        "Python": ".py"}
+    date = str(datetime.now())
+    filename = "./%s/%s%s" % (lang, date.replace(" ", "_"), lang_to_filetype[lang])
     with open(filename, "a") as file:
         for line in code:
             file.write("%s\n" % line)
