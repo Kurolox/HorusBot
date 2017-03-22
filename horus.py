@@ -1,5 +1,5 @@
 import discord
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, TimeoutExpired
 import logging
 from sys import path
 from credentials import token
@@ -37,9 +37,11 @@ async def on_message(msg):
             else:
                 filename = build_exec(lang, code)
                 print(filename)
-                output, error = run_code(lang, filename)
+                output, error, loop_flag = run_code(lang, filename)
                 if error:
                     await bot_client.send_message(msg.channel, "The bot has encountered the following error when running your %s code. \n```\n%s```" % (lang, error))
+                elif loop_flag:
+                    await bot_client.send_message(msg.channel, "I'm sorry, but your request took too long. Here are the last 5 lines from the output.\n```\n%s```" % output)
                 else:
                     await bot_client.send_message(msg.channel, "Here's the output of your %s code. \n```\n%s```" % (lang, output))
 
@@ -89,7 +91,6 @@ def build_exec(lang, code):
         "Python": ".py"}
     date = str(datetime.now())
     filename = "%s/%s/%s%s" % (path[0], lang, date.replace(" ", "--"), lang_to_filetype[lang])
-    print(filename)
     with open(filename, "a") as file:
         for line in code:
             file.write("%s\n" % line)
@@ -98,10 +99,22 @@ def build_exec(lang, code):
 
 def run_code(lang, filename):
     # Still WIP.
+    loop_flag = 0
     if lang == "Python":
         process = Popen(["python", filename], stdout=PIPE, stderr=PIPE)
-        stdout, stderr = process.communicate(timeout=6)
-        return stdout.decode("utf-8"), stderr.decode("utf-8")
+        try:
+            stdout, stderr = process.communicate(timeout=6)
+        except TimeoutExpired:
+            line_number = 5
+            stderr = b""
+            stdout = b""
+            while line_number > 0:
+                stdout += process.stdout.readline()
+                print(stdout)
+                line_number -= 1
+            loop_flag = 1
+            # TODO: Make it return the last 5 lines of output instead.
+        return stdout.decode("utf-8"), stderr.decode("utf-8"), loop_flag
 
 
 bot_client.run(token)
