@@ -98,8 +98,8 @@ def timeout(process):
     while line_number < 6:
         stdout += process.stdout.readline()
         line_number += 1
+    process.kill()
     loop_flag = 1
-    # TODO: Kill the process.
     return stdout, stderr, loop_flag
 
 
